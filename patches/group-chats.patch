@@ -47,23 +47,29 @@
   * @param {string} groupId Group ID
   * @param {boolean} shouldSaveGroup Whether to save the group after saving the chat
   * @param {boolean} force Force the saving on integrity error
-@@ -635,12 +666,56 @@
+@@ -635,12 +666,62 @@
          user_name: 'unused',
          character_name: 'unused',
      };
 +
 +    // ===== Incremental save check =====
-+    const canAppend = (
++    const isSameChat = (
 +        !force &&
 +        chatId === lastSavedGroupChatId &&
-+        chat.length > lastSavedGroupChatLength &&
-+        lastSavedGroupChatLength > 0 &&
-+        !hasOldGroupMessagesChanged(chat, lastSavedGroupChatLength)
++        lastSavedGroupChatLength > 0
 +    );
 +
-+    if (canAppend) {
-+        const newMessages = chat.slice(lastSavedGroupChatLength);
-+        console.debug(`Incremental group save: appending ${newMessages.length} new message(s) to group "${chatId}"`);
++    const hasNewMessages = isSameChat && chat.length > lastSavedGroupChatLength;
++    const isSameLength = isSameChat && chat.length === lastSavedGroupChatLength;
++    const oldMessagesUnchanged = isSameChat && !hasOldGroupMessagesChanged(chat, lastSavedGroupChatLength);
++
++    const canAppend = hasNewMessages && oldMessagesUnchanged;
++    const canHeaderOnly = isSameLength && oldMessagesUnchanged;
++
++    if (canAppend || canHeaderOnly) {
++        const newMessages = canAppend ? chat.slice(lastSavedGroupChatLength) : [];
++        const debugAction = canAppend ? `appending ${newMessages.length} new message(s)` : 'header-only update';
++        console.debug(`Incremental group save: ${debugAction} to group "${chatId}"`);
 +        const appendResponse = await fetch('/api/chats/group/save-append', {
 +            method: 'POST',
 +            headers: getRequestHeaders(),

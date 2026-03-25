@@ -71,23 +71,31 @@
  }
  
  export async function deleteLastMessage() {
-@@ -7207,6 +7255,42 @@
+@@ -7207,6 +7255,50 @@
      };
  
      try {
 +        // ===== Incremental save check =====
-+        const canAppend = (
++        const isSameChat = (
 +            !force &&
 +            mesId === undefined &&
 +            fileName === lastSavedChatName &&
-+            trimmedChat.length > lastSavedChatLength &&
-+            lastSavedChatLength > 0 &&
-+            !hasOldMessagesChanged(trimmedChat, lastSavedChatLength)
++            lastSavedChatLength > 0
 +        );
 +
-+        if (canAppend) {
-+            const newMessages = trimmedChat.slice(lastSavedChatLength);
-+            console.debug(`Incremental save: appending ${newMessages.length} new message(s) to "${fileName}"`);
++        const hasNewMessages = isSameChat && trimmedChat.length > lastSavedChatLength;
++        const isSameLength = isSameChat && trimmedChat.length === lastSavedChatLength;
++        const oldMessagesUnchanged = isSameChat && !hasOldMessagesChanged(trimmedChat, lastSavedChatLength);
++
++        // Case 1: New messages appended + old messages unchanged → incremental append
++        // Case 2: Same length + old messages unchanged → header-only update (metadata save)
++        const canAppend = hasNewMessages && oldMessagesUnchanged;
++        const canHeaderOnly = isSameLength && oldMessagesUnchanged;
++
++        if (canAppend || canHeaderOnly) {
++            const newMessages = canAppend ? trimmedChat.slice(lastSavedChatLength) : [];
++            const debugAction = canAppend ? `appending ${newMessages.length} new message(s)` : 'header-only update';
++            console.debug(`Incremental save: ${debugAction} to "${fileName}"`);
 +            const appendResult = await fetch('/api/chats/save-append', {
 +                method: 'POST',
 +                cache: 'no-cache',
@@ -114,7 +122,7 @@
          const result = await fetch('/api/chats/save', {
              method: 'POST',
              cache: 'no-cache',
-@@ -7221,6 +7305,10 @@
+@@ -7221,6 +7313,10 @@
          });
  
          if (result.ok) {

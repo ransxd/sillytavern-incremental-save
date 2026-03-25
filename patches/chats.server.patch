@@ -55,8 +55,8 @@
 +    const restOfFile = firstNewline >= 0 ? existingData.substring(firstNewline) : '';
 +
 +    const headerLine = JSON.stringify(header);
-+    const appendData = newMessages.map(m => JSON.stringify(m)).join('\n');
-+    const newData = headerLine + restOfFile + '\n' + appendData;
++    const appendData = newMessages.length > 0 ? '\n' + newMessages.map(m => JSON.stringify(m)).join('\n') : '';
++    const newData = headerLine + restOfFile + appendData;
 +
 +    tryWriteFileSync(chatFilePath, newData);
 +    getBackupFunction(handle)(backupDirectory, cardName, newData);
@@ -72,8 +72,8 @@
 +        const chatFilePath = path.join(request.user.directories.chats, cardName, sanitize(chatFileName));
 +        const { header, newMessages, expectedLines } = request.body;
 +
-+        if (!Array.isArray(newMessages) || newMessages.length === 0) {
-+            return response.status(400).send({ error: 'No new messages to append.' });
++        if (!Array.isArray(newMessages)) {
++            return response.status(400).send({ error: 'newMessages must be an array.' });
 +        }
 +
 +        const result = await tryAppendChat(chatFilePath, header, newMessages, expectedLines, handle, cardName, request.user.directories.backups);
@@ -110,8 +110,8 @@
 +        const chatFilePath = path.join(request.user.directories.groupChats, sanitize(`${id}.jsonl`));
 +        const { header, newMessages, expectedLines } = request.body;
 +
-+        if (!Array.isArray(newMessages) || newMessages.length === 0) {
-+            return response.status(400).send({ error: 'No new messages to append.' });
++        if (!Array.isArray(newMessages)) {
++            return response.status(400).send({ error: 'newMessages must be an array.' });
 +        }
 +
 +        const result = await tryAppendChat(chatFilePath, header, newMessages, expectedLines, handle, String(id), request.user.directories.backups);
