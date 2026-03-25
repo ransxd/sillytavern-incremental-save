@@ -8,10 +8,28 @@
  } from './scripts/group-chats.js';
  
  import {
-@@ -387,6 +388,48 @@
+@@ -387,6 +388,66 @@
  export let swipeState = SWIPE_STATE.NONE;
  let chatSaveTimeout;
  let importFlashTimeout;
++
++// Image proxy: intercept Image.src setter to route external images through the caching proxy
++(function installImageProxyInterceptor() {
++    const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
++    if (!descriptor || !descriptor.set) return;
++    const originalSet = descriptor.set;
++    const origin = window.location.origin;
++    Object.defineProperty(HTMLImageElement.prototype, 'src', {
++        ...descriptor,
++        set(value) {
++            if (typeof value === 'string' && (value.indexOf('://') > 0 || value.indexOf('//') === 0) && !value.startsWith(origin) && !value.startsWith('/api/image-proxy')) {
++                value = '/api/image-proxy?url=' + encodeURIComponent(value);
++            }
++            originalSet.call(this, value);
++        },
++    });
++    console.debug('[ImageProxy] Image.src interceptor installed');
++})();
 +
 +// Incremental save tracking
 +let lastSavedChatName = null;
@@ -57,7 +75,7 @@
  export let isChatSaving = false;
  let firstRun = false;
  export let settingsReady = false;
-@@ -1553,7 +1596,12 @@
+@@ -1553,7 +1614,12 @@
      await saveItemizedPrompts(getCurrentChatId());
      itemizedPrompts.length = 0;
  
@@ -71,7 +89,7 @@
  }
  
  export async function deleteLastMessage() {
-@@ -7207,6 +7255,50 @@
+@@ -7207,6 +7273,50 @@
      };
  
      try {
@@ -122,7 +140,7 @@
          const result = await fetch('/api/chats/save', {
              method: 'POST',
              cache: 'no-cache',
-@@ -7221,6 +7313,10 @@
+@@ -7221,6 +7331,10 @@
          });
  
          if (result.ok) {
