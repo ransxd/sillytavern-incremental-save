@@ -55,6 +55,7 @@ if [ "$MODE" = "docker" ]; then
     docker cp "$CONTAINER:/home/node/app/public/scripts/group-chats.js"   "$BACKUP_DIR/group-chats.js"
     docker cp "$CONTAINER:/home/node/app/public/scripts/chats.js"         "$BACKUP_DIR/chats.js"
     docker cp "$CONTAINER:/home/node/app/src/server-startup.js"           "$BACKUP_DIR/server-startup.js"
+    docker cp "$CONTAINER:/home/node/app/public/scripts/tokenizers.js"   "$BACKUP_DIR/tokenizers.js"
     info "Backups saved to $BACKUP_DIR"
 
     info "Applying patches inside container..."
@@ -71,6 +72,9 @@ if [ "$MODE" = "docker" ]; then
     # Apply patches (image proxy cache)
     docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -p1 < /tmp/_inc_save_patches/server-startup.patch"
     docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -p1 < /tmp/_inc_save_patches/chats.patch"
+
+    # Apply patches (token counting optimization)
+    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -p1 < /tmp/_inc_save_patches/tokenizers.patch"
 
     # Copy new files (image proxy endpoint)
     docker exec "$CONTAINER" cp /tmp/_inc_save_new_files/image-proxy.js /home/node/app/src/endpoints/image-proxy.js
@@ -104,6 +108,7 @@ if [ "$MODE" = "local" ]; then
     cp "$ST_DIR/public/scripts/group-chats.js"   "$BACKUP_DIR/group-chats.js"
     cp "$ST_DIR/public/scripts/chats.js"         "$BACKUP_DIR/chats.js"
     cp "$ST_DIR/src/server-startup.js"           "$BACKUP_DIR/server-startup.js"
+    cp "$ST_DIR/public/scripts/tokenizers.js"   "$BACKUP_DIR/tokenizers.js"
     info "Backups saved to $BACKUP_DIR"
 
     info "Applying patches..."
@@ -113,6 +118,7 @@ if [ "$MODE" = "local" ]; then
     patch -p1 < "$PATCHES_DIR/group-chats.patch"
     patch -p1 < "$PATCHES_DIR/server-startup.patch"
     patch -p1 < "$PATCHES_DIR/chats.patch"
+    patch -p1 < "$PATCHES_DIR/tokenizers.patch"
 
     info "Copying new files..."
     cp "$NEW_FILES_DIR/image-proxy.js" "$ST_DIR/src/endpoints/image-proxy.js"

@@ -46,6 +46,9 @@ if [ "$MODE" = "docker" ]; then
     docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/server-startup.patch" || warn "server-startup.patch already reverted"
     docker exec "$CONTAINER" rm -f /home/node/app/src/endpoints/image-proxy.js
 
+    # Reverse token counting optimization
+    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/tokenizers.patch" || warn "tokenizers.patch already reverted"
+
     # Reverse incremental save patches
     docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/chats.server.patch" || warn "chats.server.patch already reverted"
     docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/script.patch" || warn "script.patch already reverted"
@@ -69,6 +72,7 @@ if [ "$MODE" = "local" ]; then
     patch -R -p1 < "$PATCHES_DIR/chats.patch" || warn "chats.patch already reverted"
     patch -R -p1 < "$PATCHES_DIR/server-startup.patch" || warn "server-startup.patch already reverted"
     rm -f "$ST_DIR/src/endpoints/image-proxy.js"
+    patch -R -p1 < "$PATCHES_DIR/tokenizers.patch" || warn "tokenizers.patch already reverted"
     patch -R -p1 < "$PATCHES_DIR/chats.server.patch" || warn "chats.server.patch already reverted"
     patch -R -p1 < "$PATCHES_DIR/script.patch" || warn "script.patch already reverted"
     patch -R -p1 < "$PATCHES_DIR/group-chats.patch" || warn "group-chats.patch already reverted"

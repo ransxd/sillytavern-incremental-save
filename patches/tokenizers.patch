@@ -1,0 +1,31 @@
+--- a/public/scripts/tokenizers.js	2026-03-10 20:43:16.000000000 +0000
++++ b/public/scripts/tokenizers.js	2026-03-25 16:29:51.346646021 +0000
+@@ -869,17 +869,24 @@
+         }
+ 
+         else {
+-            const data = await jQuery.ajax({
++            // Fast estimation: use char-based approximation (same ratio as server fallback)
++            // Real token count will be fetched async and cached for next time
++            const CHARS_PER_TOKEN = 3.35;
++            const text = typeof message.content === 'string' ? message.content : JSON.stringify(message);
++            const estimated = Math.ceil(text.length / CHARS_PER_TOKEN);
++            token_count += estimated;
++
++            // Async backfill: fetch real token count in background and update cache
++            jQuery.ajax({
+                 async: true,
+                 type: 'POST', //
+                 url: tokenizerEndpoint,
+                 data: JSON.stringify([message]),
+                 dataType: 'json',
+                 contentType: 'application/json',
++            }).then(data => {
++                cacheObject[cacheKey] = Number(data.token_count);
+             });
+-
+-            token_count += Number(data.token_count);
+-            cacheObject[cacheKey] = Number(data.token_count);
+         }
+     }
+ 
