@@ -1,0 +1,17 @@
+--- a/public/scripts/chats.js
++++ b/public/scripts/chats.js
+@@ -1908,6 +1908,14 @@
+             node.setAttribute('target', '_blank');
+             node.setAttribute('rel', 'noopener');
+         }
++
++        // Rewrite external image URLs to use the image proxy for caching
++        if (node.tagName === 'IMG') {
++            const src = node.getAttribute('src');
++            if (src && (src.indexOf('://') > 0 || src.indexOf('//') === 0) && !src.startsWith(window.location.origin) && !src.startsWith('/api/image-proxy')) {
++                node.setAttribute('src', '/api/image-proxy?url=' + encodeURIComponent(src));
++            }
++        }
+     });
+ 
+     DOMPurify.addHook('uponSanitizeAttribute', (node, data, config) => {

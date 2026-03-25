@@ -1,0 +1,18 @@
+--- a/src/server-startup.js
++++ b/src/server-startup.js
+@@ -50,6 +50,7 @@
+ import { router as backupsRouter } from './endpoints/backups.js';
+ import { router as imageMetadataRouter } from './endpoints/image-metadata.js';
+ import { router as volcengineRouter } from './endpoints/volcengine.js';
++import { router as imageProxyRouter } from './endpoints/image-proxy.js';
+ 
+ /**
+  * @typedef {object} ServerStartupResult
+@@ -181,6 +182,7 @@
+     app.use('/api/data-maid', dataMaidRouter);
+     app.use('/api/backups', backupsRouter);
+     app.use('/api/image-metadata', imageMetadataRouter);
++    app.use('/api/image-proxy', imageProxyRouter);
+ }
+ 
+ /**

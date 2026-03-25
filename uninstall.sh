@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# SillyTavern Incremental Save - Uninstaller
+# SillyTavern Incremental Save + Image Cache - Uninstaller
 #
 # Reverses patches from a running SillyTavern Docker container
 # or a local SillyTavern installation.
@@ -40,15 +40,23 @@ if [ "$MODE" = "docker" ]; then
 
     info "Reversing patches in container '$CONTAINER'..."
     docker cp "$PATCHES_DIR" "$CONTAINER:/tmp/_inc_save_patches"
-    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/chats.server.patch"
-    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/script.patch"
-    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/group-chats.patch"
+
+    # Reverse image cache patches
+    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/chats.patch" || warn "chats.patch already reverted"
+    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/server-startup.patch" || warn "server-startup.patch already reverted"
+    docker exec "$CONTAINER" rm -f /home/node/app/src/endpoints/image-proxy.js
+
+    # Reverse incremental save patches
+    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/chats.server.patch" || warn "chats.server.patch already reverted"
+    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/script.patch" || warn "script.patch already reverted"
+    docker exec "$CONTAINER" sh -c "cd /home/node/app && patch -R -p1 < /tmp/_inc_save_patches/group-chats.patch" || warn "group-chats.patch already reverted"
+
     docker exec "$CONTAINER" rm -rf /tmp/_inc_save_patches
 
     info "Restarting container..."
     docker restart "$CONTAINER"
     sleep 3
-    info "Done! Incremental save has been removed."
+    info "Done! All patches have been removed."
 fi
 
 if [ "$MODE" = "local" ]; then
@@ -58,9 +66,12 @@ if [ "$MODE" = "local" ]; then
 
     info "Reversing patches..."
     cd "$ST_DIR"
-    patch -R -p1 < "$PATCHES_DIR/chats.server.patch"
-    patch -R -p1 < "$PATCHES_DIR/script.patch"
-    patch -R -p1 < "$PATCHES_DIR/group-chats.patch"
+    patch -R -p1 < "$PATCHES_DIR/chats.patch" || warn "chats.patch already reverted"
+    patch -R -p1 < "$PATCHES_DIR/server-startup.patch" || warn "server-startup.patch already reverted"
+    rm -f "$ST_DIR/src/endpoints/image-proxy.js"
+    patch -R -p1 < "$PATCHES_DIR/chats.server.patch" || warn "chats.server.patch already reverted"
+    patch -R -p1 < "$PATCHES_DIR/script.patch" || warn "script.patch already reverted"
+    patch -R -p1 < "$PATCHES_DIR/group-chats.patch" || warn "group-chats.patch already reverted"
 
-    info "Done! Restart SillyTavern to revert to full saves."
+    info "Done! Restart SillyTavern to revert all changes."
 fi
